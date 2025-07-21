@@ -2,26 +2,40 @@
   "name": "equitaskly-api",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "enhanced_server.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node enhanced_server.js",
+    "dev": "node enhanced_server.js",
+    "test:api": "echo 'Import tools/EquiTaskly-Enhanced-Auth-API.postman_collection.json into Postman'",
+    "setup:database": "echo 'Run the SQL files in setup/database/ against your Supabase instance'"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.1",
+    "express-slow-down": "^2.1.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^3.3.2",
+    "uuid": "^11.1.0",
+    "zod": "^3.24.4"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.1",
+    "@types/jest": "^29.5.14",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.15.17",
+    "@types/uuid": "^10.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.3.3",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.3"
   }
