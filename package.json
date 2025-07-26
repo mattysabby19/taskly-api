@@ -5,7 +5,9 @@
   "main": "enhanced_server.js",
   "scripts": {
     "start": "node enhanced_server.js",
-    "dev": "node enhanced_server.js",
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
+    "deploy": "vercel --prod",
     "test:api": "echo 'Import tools/EquiTaskly-Enhanced-Auth-API.postman_collection.json into Postman'",
     "setup:database": "echo 'Run the SQL files in setup/database/ against your Supabase instance'"
   },
@@ -37,6 +39,7 @@
     "jest": "^29.7.0",
     "ts-jest": "^29.3.3",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vercel": "^32.7.2"
   }
 }

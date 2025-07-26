@@ -756,12 +756,18 @@ app.get('/api/test', (req, res) => {
 });
 
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Enhanced Auth API Server running on port ${PORT}`);
-  console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`📱 Mobile test: http://10.0.2.2:${PORT}/api/test`);
-  console.log(`🔐 Signup: POST http://localhost:${PORT}/api/auth/signup`);
-  console.log(`🔑 Login: POST http://localhost:${PORT}/api/auth/login`);
-  console.log(`🌐 Listening on all interfaces (0.0.0.0:${PORT})`);
-});
+// Export the Express app for Vercel
+module.exports = app;
+
+// For local development
+if (require.main === module) {
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Enhanced Auth API Server running on port ${PORT}`);
+    console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`📱 Mobile test: http://10.0.2.2:${PORT}/api/test`);
+    console.log(`🔐 Signup: POST http://localhost:${PORT}/api/auth/signup`);
+    console.log(`🔑 Login: POST http://localhost:${PORT}/api/auth/login`);
+    console.log(`🌐 Listening on all interfaces (0.0.0.0:${PORT})`);
+  });
+}
