@@ -1,0 +1,1254 @@
+{
+  "info": {
+    "name": "EquiTaskly Enhanced Authentication API",
+    "description": "Complete collection for testing EquiTaskly's enhanced authentication and TypeScript controllers with proper schema field naming.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "4.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set base URL if not already set",
+          "if (!pm.environment.get('base_url')) {",
+          "    pm.environment.set('base_url', 'http://localhost:4000');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "test_email",
+      "value": "test@example.com",
+      "type": "string"
+    },
+    {
+      "key": "test_password",
+      "value": "TestPassword123",
+      "type": "string"
+    },
+    {
+      "key": "test_name",
+      "value": "Test User",
+      "type": "string"
+    },
+    {
+      "key": "group_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "task_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "member_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🏠 Server Health",
+      "item": [
+        {
+          "name": "API Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Server is running', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('status', 'healthy');",
+                  "    pm.expect(response.message).to.include('Enhanced Auth API');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Check if the enhanced authentication server is running"
+          },
+          "response": []
+        },
+        {
+          "name": "Mobile Connectivity Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Mobile connectivity test passes', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response.message).to.include('connectivity test successful');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/test",
+              "host": ["{{base_url}}"],
+              "path": ["api", "test"]
+            },
+            "description": "Test endpoint for mobile app connectivity verification"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📧 Email Authentication",
+      "item": [
+        {
+          "name": "Email Signup (TypeScript)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate unique email for testing",
+                  "const timestamp = Date.now();",
+                  "pm.environment.set('unique_email', `test${timestamp}@example.com`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('TypeScript signup successful', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('token');",
+                  "    pm.expect(response).to.have.property('user');",
+                  "    pm.expect(response).to.have.property('group');",
+                  "});",
+                  "",
+                  "pm.test('User has correct schema fields', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.user).to.have.property('id');",
+                  "    pm.expect(response.user).to.have.property('email');",
+                  "    pm.expect(response.user).to.have.property('name');",
+                  "    pm.expect(response.user).to.have.property('current_group_id');",
+                  "    pm.expect(response.user).to.have.property('is_admin', true);",
+                  "    pm.expect(response.user).to.have.property('memberships');",
+                  "});",
+                  "",
+                  "// Save credentials for subsequent requests",
+                  "if (pm.response.json().token) {",
+                  "    pm.environment.set('auth_token', pm.response.json().token);",
+                  "    pm.environment.set('user_id', pm.response.json().user.id);",
+                  "    pm.environment.set('group_id', pm.response.json().user.current_group_id);",
+                  "    console.log('TypeScript signup token saved:', pm.response.json().token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{unique_email}}\",\n  \"password\": \"{{test_password}}\",\n  \"name\": \"{{test_name}}\",\n  \"marketing_consent\": true,\n  \"analytics_consent\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/email/signup",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "email", "signup"]
+            },
+            "description": "TypeScript controller email signup with enhanced schema validation"
+          },
+          "response": []
+        },
+        {
+          "name": "Email Login (TypeScript)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('TypeScript login successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('token');",
+                  "    pm.expect(response).to.have.property('user');",
+                  "});",
+                  "",
+                  "pm.test('User profile matches schema', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.user).to.have.property('id');",
+                  "    pm.expect(response.user).to.have.property('email');",
+                  "    pm.expect(response.user).to.have.property('name');",
+                  "    pm.expect(response.user).to.have.property('provider', 'email');",
+                  "});",
+                  "",
+                  "// Update token for authenticated requests",
+                  "if (pm.response.json().token) {",
+                  "    pm.environment.set('auth_token', pm.response.json().token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{unique_email}}\",\n  \"password\": \"{{test_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/email/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "email", "login"]
+            },
+            "description": "TypeScript controller email login with enhanced validation"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔗 OAuth Authentication",
+      "item": [
+        {
+          "name": "OAuth Login (Google)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('OAuth redirect initiated', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('redirect_url');",
+                  "    pm.expect(response).to.have.property('provider', 'google');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"redirectTo\": \"http://localhost:3000/auth/callback\",\n  \"scopes\": \"email profile\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/oauth/google",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "oauth", "google"]
+            },
+            "description": "Initiate OAuth login with Google provider"
+          },
+          "response": []
+        },
+        {
+          "name": "OAuth Callback",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('OAuth callback processed', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('token');",
+                  "    pm.expect(response).to.have.property('user');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"access_token\": \"test_oauth_access_token\",\n  \"refresh_token\": \"test_oauth_refresh_token\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/oauth/callback",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "oauth", "callback"]
+            },
+            "description": "Handle OAuth callback with access token"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👥 Member Management",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Profile retrieved successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('email');",
+                  "    pm.expect(response).to.have.property('memberships');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/members/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "members", "me"]
+            },
+            "description": "Get current user's profile with memberships"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Group Members",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Group members retrieved', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(Array.isArray(response)).to.be.true;",
+                  "    if (response.length > 0) {",
+                  "        pm.expect(response[0]).to.have.property('id');",
+                  "        pm.expect(response[0]).to.have.property('email');",
+                  "        pm.expect(response[0]).to.have.property('memberships');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/members/groups/{{group_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "members", "groups", "{{group_id}}"]
+            },
+            "description": "Get all members in a specific group with role information"
+          },
+          "response": []
+        },
+        {
+          "name": "Invite Member",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate unique email for invitation",
+                  "const timestamp = Date.now();",
+                  "pm.environment.set('invite_email', `invite${timestamp}@example.com`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Member invited successfully', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('member');",
+                  "    pm.expect(response).to.have.property('invitation_id');",
+                  "    pm.expect(response.member).to.have.property('email');",
+                  "});",
+                  "",
+                  "// Save member ID for future tests",
+                  "if (pm.response.json().member) {",
+                  "    pm.environment.set('member_id', pm.response.json().member.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{invite_email}}\",\n  \"name\": \"Invited User\",\n  \"role_name\": \"member\",\n  \"message\": \"Welcome to our household management team!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/members/groups/{{group_id}}/invite",
+              "host": ["{{base_url}}"],
+              "path": ["api", "members", "groups", "{{group_id}}", "invite"]
+            },
+            "description": "Invite a new member to the group with specified role"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Member Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Member profile updated', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('name');",
+                  "    pm.expect(response.name).to.include('Updated');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Test User\",\n  \"marketing_consent\": false,\n  \"analytics_consent\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/members/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "members", "{{user_id}}"]
+            },
+            "description": "Update member profile information"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Member Role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Member role updated', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('message');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role_name\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/members/{{member_id}}/groups/{{group_id}}/role",
+              "host": ["{{base_url}}"],
+              "path": ["api", "members", "{{member_id}}", "groups", "{{group_id}}", "role"]
+            },
+            "description": "Update a member's role within a group"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📋 Task Management",
+      "item": [
+        {
+          "name": "Create Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Task created successfully', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('title');",
+                  "    pm.expect(response).to.have.property('assigned_to');",
+                  "    pm.expect(response).to.have.property('created_by');",
+                  "    pm.expect(response).to.have.property('group_id');",
+                  "    pm.expect(response).to.have.property('status', 'pending');",
+                  "});",
+                  "",
+                  "// Save task ID for future tests",
+                  "if (pm.response.json().id) {",
+                  "    pm.environment.set('task_id', pm.response.json().id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Task with Correct Schema\",\n  \"description\": \"This task tests the corrected field naming\",\n  \"category\": \"Chores\",\n  \"priority\": \"Medium\",\n  \"assigned_to\": \"{{user_id}}\",\n  \"group_id\": \"{{group_id}}\",\n  \"due_date\": \"2024-12-31T23:59:59.000Z\",\n  \"urgent\": false,\n  \"estimated_minutes\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tasks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tasks"]
+            },
+            "description": "Create a new task with correct snake_case field naming"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Group Tasks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Group tasks retrieved', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(Array.isArray(response)).to.be.true;",
+                  "    if (response.length > 0) {",
+                  "        pm.expect(response[0]).to.have.property('id');",
+                  "        pm.expect(response[0]).to.have.property('title');",
+                  "        pm.expect(response[0]).to.have.property('assigned_to');",
+                  "        pm.expect(response[0]).to.have.property('created_by');",
+                  "        pm.expect(response[0]).to.have.property('group_id');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tasks/groups/{{group_id}}?status=pending&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tasks", "groups", "{{group_id}}"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get all tasks for a group with optional filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Tasks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('My tasks retrieved', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(Array.isArray(response)).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tasks/my?group_id={{group_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tasks", "my"],
+              "query": [
+                {
+                  "key": "group_id",
+                  "value": "{{group_id}}"
+                }
+              ]
+            },
+            "description": "Get tasks assigned to the current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Task updated successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('title');",
+                  "    pm.expect(response.title).to.include('Updated');",
+                  "    pm.expect(response).to.have.property('priority', 'High');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Test Task\",\n  \"description\": \"This task has been updated with correct schema\",\n  \"priority\": \"High\",\n  \"urgent\": true,\n  \"estimated_minutes\": 45\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tasks/{{task_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tasks", "{{task_id}}"]
+            },
+            "description": "Update an existing task"
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Task completed successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('status', 'completed');",
+                  "    pm.expect(response).to.have.property('completed_at');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tasks/{{task_id}}/complete",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tasks", "{{task_id}}", "complete"]
+            },
+            "description": "Mark a task as completed"
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Task assigned successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('assigned_to');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assigned_to\": \"{{member_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tasks/{{task_id}}/assign",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tasks", "{{task_id}}", "assign"]
+            },
+            "description": "Assign a task to a specific member"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Task Statistics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Task statistics retrieved', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('total');",
+                  "    pm.expect(response).to.have.property('completed');",
+                  "    pm.expect(response).to.have.property('pending');",
+                  "    pm.expect(response).to.have.property('completionRate');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tasks/groups/{{group_id}}/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tasks", "groups", "{{group_id}}", "stats"]
+            },
+            "description": "Get task completion statistics for a group"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🛡️ GDPR Compliance",
+      "item": [
+        {
+          "name": "Update Consent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Consent updated successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('consent');",
+                  "    pm.expect(response.consent).to.have.property('type', 'analytics');",
+                  "    pm.expect(response.consent).to.have.property('granted', true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"consent_type\": \"analytics\",\n  \"granted\": true,\n  \"version\": \"1.0\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/gdpr/consent",
+              "host": ["{{base_url}}"],
+              "path": ["api", "gdpr", "consent"]
+            },
+            "description": "Update user consent preferences for GDPR compliance"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Consent Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Consent status retrieved', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('consents');",
+                  "    pm.expect(Array.isArray(response.consents)).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/gdpr/consents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "gdpr", "consents"]
+            },
+            "description": "Get current user's consent status for all types"
+          },
+          "response": []
+        },
+        {
+          "name": "Request Data Export",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Data export requested', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('export_data');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data_types\": [\"profile\", \"tasks\", \"analytics\"],\n  \"format\": \"json\",\n  \"async\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/gdpr/export",
+              "host": ["{{base_url}}"],
+              "path": ["api", "gdpr", "export"]
+            },
+            "description": "Request export of user data for GDPR compliance"
+          },
+          "response": []
+        },
+        {
+          "name": "Request Data Deletion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Data deletion requested', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('request_id');",
+                  "    pm.expect(response).to.have.property('deletion_type', 'partial');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deletion_type\": \"partial\",\n  \"data_types\": [\"analytics\", \"sessions\"],\n  \"reason\": \"No longer wish to share analytics data\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/gdpr/delete",
+              "host": ["{{base_url}}"],
+              "path": ["api", "gdpr", "delete"]
+            },
+            "description": "Request deletion of specific user data types"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📈 Legacy Endpoints",
+      "description": "Original working endpoints from enhanced_server.js for comparison",
+      "item": [
+        {
+          "name": "Legacy Enhanced Signup",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate unique email for testing",
+                  "const timestamp = Date.now();",
+                  "pm.environment.set('legacy_email', `legacy${timestamp}@example.com`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Legacy signup successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('token');",
+                  "    pm.expect(response).to.have.property('user');",
+                  "    pm.expect(response).to.have.property('group');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{legacy_email}}\",\n  \"password\": \"{{test_password}}\",\n  \"name\": \"Legacy Test User\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/signup",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "signup"]
+            },
+            "description": "Original working signup endpoint from enhanced_server.js"
+          },
+          "response": []
+        },
+        {
+          "name": "Legacy Enhanced Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Legacy login successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('token');",
+                  "    pm.expect(response).to.have.property('user');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{legacy_email}}\",\n  \"password\": \"{{test_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Original working login endpoint from enhanced_server.js"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📝 API Documentation",
+      "description": "Complete endpoint documentation with corrected TypeScript controllers",
+      "item": [
+        {
+          "name": "📋 Complete Endpoint List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health"]
+            },
+            "description": "✅ UPDATED TYPESCRIPT ENDPOINTS:\n\n🏠 Health & Testing:\n- GET /api/health (Server health status)\n- GET /api/test (Mobile connectivity test)\n\n📧 Email Authentication (TypeScript):\n- POST /api/auth/email/signup (Enhanced user registration)\n- POST /api/auth/email/login (Enhanced user authentication)\n\n🔗 OAuth Authentication (TypeScript):\n- POST /api/auth/oauth/{provider} (Initiate OAuth flow)\n- POST /api/auth/oauth/callback (Handle OAuth callback)\n- POST /api/auth/providers/link (Link additional provider)\n- DELETE /api/auth/providers/{provider} (Unlink provider)\n\n👥 Member Management (TypeScript):\n- GET /api/members/me (Get current user profile)\n- GET /api/members/groups/{groupId} (Get group members)\n- POST /api/members/groups/{groupId}/invite (Invite member)\n- PUT /api/members/{id} (Update member profile)\n- PUT /api/members/{id}/groups/{groupId}/role (Update member role)\n- DELETE /api/members/{id}/groups/{groupId} (Remove from group)\n\n📋 Task Management (TypeScript):\n- POST /api/tasks (Create task)\n- GET /api/tasks/groups/{groupId} (Get group tasks)\n- GET /api/tasks/my (Get my tasks)\n- GET /api/tasks/{id} (Get single task)\n- PUT /api/tasks/{id} (Update task)\n- PUT /api/tasks/{id}/complete (Complete task)\n- PUT /api/tasks/{id}/assign (Assign task)\n- DELETE /api/tasks/{id} (Delete task)\n- GET /api/tasks/groups/{groupId}/stats (Task statistics)\n\n🛡️ GDPR Compliance (TypeScript):\n- POST /api/gdpr/consent (Update consent)\n- GET /api/gdpr/consents (Get consent status)\n- POST /api/gdpr/export (Request data export)\n- POST /api/gdpr/delete (Request data deletion)\n- GET /api/gdpr/privacy-policy (Get privacy policy)\n\n📊 CORRECTED SCHEMA FIELDS:\n- assigned_to (not assignedTo)\n- created_by (not createdBy)\n- group_id (not groupId)\n- due_date (not dueDate)\n- completed_at (not completedAt)\n- estimated_minutes (not estimatedMinutes)\n\n🔧 ENHANCED FEATURES:\n- ✅ Group-based memberships with roles\n- ✅ GDPR compliance endpoints\n- ✅ OAuth multi-provider support\n- ✅ Task assignment and tracking\n- ✅ Member invitation system\n- ✅ Real-time statistics\n- ✅ Comprehensive validation\n- ✅ TypeScript type safety"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
