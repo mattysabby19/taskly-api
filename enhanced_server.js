@@ -165,13 +165,18 @@ app.post('/api/auth/signup', async (req, res) => {
     }
     console.log('✅ Group membership created');
 
-    // Step 6: Create session token
-    const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
-      type: 'magiclink',
-      email: authData.user.email
+    // Step 6: Sign in the user to get a proper session token
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: authData.user.email,
+      password: password
     });
 
-    const token = sessionData?.properties?.access_token || 'temp-token';
+    if (signInError) {
+      console.error('❌ Sign-in failed:', signInError);
+      throw new Error(`Sign-in failed: ${signInError.message}`);
+    }
+
+    const token = signInData?.session?.access_token;
 
     // Return success response
     res.json({
@@ -524,12 +529,17 @@ app.post('/api/auth/email/signup', async (req, res) => {
 
     if (membershipError) throw new Error(`Membership creation failed: ${membershipError.message}`);
 
-    const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
-      type: 'magiclink',
-      email: authData.user.email
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: authData.user.email,
+      password: password
     });
 
-    const token = sessionData?.properties?.access_token || 'temp-token';
+    if (signInError) {
+      console.error('❌ Sign-in failed:', signInError);
+      throw new Error(`Sign-in failed: ${signInError.message}`);
+    }
+
+    const token = signInData?.session?.access_token;
 
     // TypeScript-style response
     res.status(201).json({
