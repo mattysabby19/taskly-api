@@ -11,14 +11,54 @@ import {
 // Create a new task
 export const createTask = async (req: Request, res: Response) => {
   try {
-    const data = createTaskSchema.parse(req.body);
-    const userId = (req as any).user.id;
+    const user = (req as any).user;
+    const userId = user.id;
+    const userGroupId = user.group_id;
     
+    // If no group_id in request body, use user's group_id
+    const requestData = {
+      ...req.body,
+      group_id: req.body.group_id || req.body.groupId || userGroupId
+    };
+    
+    if (!requestData.group_id) {
+      return res.status(400).json({ 
+        error: 'Group ID is required. User must be associated with a group to create tasks.' 
+      });
+    }
+    
+    console.log('Creating task with data:', { 
+      ...requestData, 
+      description: requestData.description ? '[REDACTED]' : 'empty' 
+    });
+    
+    const data = createTaskSchema.parse(requestData);
     const task = await taskService.createTask(data, userId);
-    res.status(201).json(task);
+    
+    res.status(201).json({
+      success: true,
+      data: task,
+      message: 'Task created successfully'
+    });
   } catch (error: any) {
     console.error('Create task error:', error);
-    res.status(400).json({ error: error.message || 'Failed to create task' });
+    
+    // Handle validation errors specifically
+    if (error.name === 'ZodError') {
+      const validationErrors = error.errors.map((err: any) => 
+        `${err.path.join('.')}: ${err.message}`
+      ).join(', ');
+      
+      return res.status(400).json({ 
+        success: false,
+        error: `Validation failed: ${validationErrors}` 
+      });
+    }
+    
+    res.status(400).json({ 
+      success: false,
+      error: error.message || 'Failed to create task' 
+    });
   }
 };
 
@@ -28,11 +68,26 @@ export const getGroupTasks = async (req: Request, res: Response) => {
     const { groupId } = req.params;
     const filters = taskFiltersSchema.parse(req.query);
     
+    console.log(`Fetching tasks for group: ${groupId}`);
     const tasks = await taskService.getTasksByGroup(groupId, filters);
-    res.json(tasks);
+    
+    res.json({
+      success: true,
+      data: tasks,
+      count: tasks.length,
+      pagination: {
+        page: Math.floor((filters.offset || 0) / (filters.limit || 50)) + 1,
+        limit: filters.limit || 50,
+        total: tasks.length,
+        totalPages: Math.ceil(tasks.length / (filters.limit || 50))
+      }
+    });
   } catch (error: any) {
     console.error('Get group tasks error:', error);
-    res.status(400).json({ error: error.message || 'Failed to fetch tasks' });
+    res.status(500).json({ 
+      success: false,
+      error: error.message || 'Failed to fetch tasks' 
+    });
   }
 };
 
@@ -99,10 +154,18 @@ export const updateTask = async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
     
     const task = await taskService.updateTask(taskId, updates, userId);
-    res.json(task);
+    
+    res.json({
+      success: true,
+      data: task,
+      message: 'Task updated successfully'
+    });
   } catch (error: any) {
     console.error('Update task error:', error);
-    res.status(400).json({ error: error.message || 'Failed to update task' });
+    res.status(400).json({ 
+      success: false,
+      error: error.message || 'Failed to update task' 
+    });
   }
 };
 
@@ -152,7 +215,14 @@ export const bulkUpdateTasks = async (req: Request, res: Response) => {
 // Get task statistics for a group
 export const getTaskStats = async (req: Request, res: Response) => {
   try {
-    const { groupId } = req.params;
+    // Support both path parameter and query parameter
+    const groupId = req.params.groupId || req.query.group_id as string;
+    
+    if (!groupId) {
+      return res.status(400).json({ 
+        error: 'Group ID is required either as path parameter or query parameter' 
+      });
+    }
     
     const stats = await taskService.getTaskStats(groupId);
     res.json(stats);
@@ -176,9 +246,58 @@ export const completeTask = async (req: Request, res: Response) => {
       }, 
       userId
     );
-    res.json(task);
+    
+    res.json({
+      success: true,
+      data: task,
+      message: 'Task completed successfully'
+    });
   } catch (error: any) {
     console.error('Complete task error:', error);
-    res.status(400).json({ error: error.message || 'Failed to complete task' });
+    res.status(400).json({ 
+      success: false,
+      error: error.message || 'Failed to complete task' 
+    });
+  }
+};
+
+// Toggle task completion status
+export const toggleTaskCompletion = async (req: Request, res: Response) => {
+  try {
+    const { taskId } = req.params;
+    const userId = (req as any).user.id;
+    
+    // Get current task status
+    const currentTask = await taskService.getTaskById(taskId);
+    if (!currentTask) {
+      return res.status(404).json({
+        success: false,
+        error: 'Task not found'
+      });
+    }
+    
+    // Toggle status
+    const newStatus = currentTask.status === 'completed' ? 'pending' : 'completed';
+    const updates: any = { status: newStatus };
+    
+    if (newStatus === 'completed') {
+      updates.completed_at = new Date().toISOString();
+    } else {
+      updates.completed_at = null;
+    }
+    
+    const task = await taskService.updateTask(taskId, updates, userId);
+    
+    res.json({
+      success: true,
+      data: task,
+      message: `Task ${newStatus === 'completed' ? 'completed' : 'reopened'} successfully`
+    });
+  } catch (error: any) {
+    console.error('Toggle task completion error:', error);
+    res.status(400).json({ 
+      success: false,
+      error: error.message || 'Failed to toggle task completion' 
+    });
   }
 };

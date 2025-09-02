@@ -2,8 +2,8 @@
 // Single session, RBAC, rate limiting, security monitoring
 
 import { RequestHandler } from 'express';
-import { supabase } from '../config/supabase';
-import { enhancedAuthService } from '../services/enhancedAuthService';
+import { supabaseAdmin as supabase } from '../config/supabase';
+import { authService as enhancedAuthService } from '../services/authService';
 import rateLimit from 'express-rate-limit';
 import slowDown from 'express-slow-down';
 import { createHash } from 'crypto';

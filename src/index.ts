@@ -164,17 +164,19 @@ app.get('/api/auth/verify', (req, res) => {
   }
 });
 
-// Load other routes after the test route works
-// COMMENTED OUT: These routes import real Supabase auth middleware which conflicts with mock mode
-// try {
-//   const memberRoutes = require('./routes/memberRoutes').default;
-//   const taskRoutes = require('./routes/taskRoutes').default;
-//   
-//   app.use('/api/members', memberRoutes);
-//   app.use('/api/tasks', taskRoutes);
-// } catch (error) {
-//   console.error('Error loading routes:', error);
-// }
+// Load TypeScript routes
+try {
+  const memberRoutes = require('./routes/memberRoutes').default;
+  const taskRoutes = require('./routes/taskRoutes').default;
+  
+  app.use('/api/members', memberRoutes);
+  app.use('/api/tasks', taskRoutes);
+  
+  console.log('✅ TypeScript routes loaded successfully');
+} catch (error) {
+  console.error('❌ Error loading TypeScript routes:', error);
+  console.warn('⚠️  Continuing with mock endpoints only');
+}
 
 
 

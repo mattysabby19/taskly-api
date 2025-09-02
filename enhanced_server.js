@@ -963,7 +963,7 @@ app.get('/api/test', (req, res) => {
 // Create a new task
 app.post('/api/tasks', verifyToken, async (req, res) => {
   try {
-    const { title, description, priority = 'medium', type = 'personal', due_date, assigned_member_id } = req.body;
+    const { title, description, category, priority = 'medium', type = 'personal', due_date, assigned_member_id } = req.body;
     const user_id = req.user.id;
 
     if (!title) {
@@ -997,10 +997,12 @@ app.post('/api/tasks', verifyToken, async (req, res) => {
       id: uuidv4(),
       title,
       description,
+      category,
       status: 'pending',
       priority,
       group_id: userGroupId,
       created_by: user_id,
+      assignee_id: assigned_member_id || user_id, // Auto-assign to creator if no assignee specified
       due_date
     };
 
@@ -1079,6 +1081,35 @@ app.get('/api/tasks', verifyToken, async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to fetch tasks'
+    });
+  }
+});
+
+// Get current user's assigned tasks
+app.get('/api/tasks/my-tasks', verifyToken, async (req, res) => {
+  try {
+    const user_id = req.user.id;
+    
+    const { data: tasks, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('assignee_id', user_id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Get my tasks error:', error);
+      throw error;
+    }
+
+    res.json({
+      success: true,
+      data: tasks || []
+    });
+  } catch (error) {
+    console.error('My tasks fetch error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch user tasks'
     });
   }
 });
@@ -1387,6 +1418,156 @@ app.delete('/api/tasks/:taskId', verifyToken, async (req, res) => {
   }
 });
 
+// Toggle a task completion status
+app.patch('/api/tasks/:taskId/toggle', verifyToken, async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const user_id = req.user.id;
+
+    console.log(`Toggling task ${taskId} for user ${user_id}`);
+
+    // Get the current task to check its status
+    const { data: existingTask, error: fetchError } = await supabase
+      .from('tasks')
+      .select('*, group_id')
+      .eq('id', taskId)
+      .single();
+
+    if (fetchError || !existingTask) {
+      console.error('Task not found:', fetchError);
+      return res.status(404).json({
+        success: false,
+        error: 'Task not found'
+      });
+    }
+
+    // Toggle the completion status
+    const newStatus = existingTask.status === 'completed' ? 'pending' : 'completed';
+    const updateData = {
+      status: newStatus,
+      updated_at: new Date().toISOString()
+    };
+
+    // Set completed_at if completing the task
+    if (newStatus === 'completed') {
+      updateData.completed_at = new Date().toISOString();
+    } else {
+      updateData.completed_at = null;
+    }
+
+    const { data: task, error } = await supabase
+      .from('tasks')
+      .update(updateData)
+      .eq('id', taskId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Task toggle error:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to toggle task'
+      });
+    }
+
+    console.log(`Task ${taskId} toggled to ${newStatus}`);
+
+    res.json({
+      success: true,
+      data: task,
+      message: `Task ${newStatus === 'completed' ? 'completed' : 'reopened'} successfully`
+    });
+  } catch (error) {
+    console.error('Toggle task error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to toggle task'
+    });
+  }
+});
+
+// Get task statistics
+app.get('/api/tasks/stats', verifyToken, async (req, res) => {
+  try {
+    const user_id = req.user.id;
+    const { group_id } = req.query;
+    
+    console.log(`Getting task statistics for user: ${user_id}, group: ${group_id}`);
+    
+    // Get user's groups if no specific group provided
+    let groupIds = [];
+    if (group_id) {
+      groupIds = [group_id];
+    } else {
+      const { data: memberships } = await supabase
+        .from('group_memberships')
+        .select('group_id')
+        .eq('member_id', user_id)
+        .eq('status', 'active');
+      groupIds = memberships?.map(m => m.group_id) || [];
+    }
+    
+    if (groupIds.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          total: 0, completed: 0, pending: 0, in_progress: 0,
+          urgent: 0, today: 0, overdue: 0, completion_rate: 0
+        }
+      });
+    }
+    
+    const { data: tasks, error } = await supabase
+      .from('tasks')
+      .select('status, due_date, priority')
+      .in('group_id', groupIds);
+      
+    if (error) {
+      console.error('Task stats query error:', error);
+      throw error;
+    }
+    
+    const total = tasks?.length || 0;
+    const completed = tasks?.filter(t => t.status === 'completed').length || 0;
+    const pending = tasks?.filter(t => t.status === 'pending').length || 0;
+    const in_progress = tasks?.filter(t => t.status === 'in_progress').length || 0;
+    const urgent = tasks?.filter(t => 
+      (t.priority === 'High' || t.priority === 'high') && t.status !== 'completed'
+    ).length || 0;
+    
+    const today = new Date().toDateString();
+    const todayCount = tasks?.filter(t => {
+      if (!t.due_date || t.status === 'completed') return false;
+      return new Date(t.due_date).toDateString() === today;
+    }).length || 0;
+    
+    const now = new Date();
+    const overdue = tasks?.filter(t => 
+      t.status !== 'completed' && t.due_date && new Date(t.due_date) < now
+    ).length || 0;
+    
+    const completion_rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
+    console.log(`Task statistics calculated:`, {
+      total, completed, pending, in_progress, urgent, today: todayCount, overdue, completion_rate
+    });
+    
+    res.json({
+      success: true,
+      data: {
+        total, completed, pending, in_progress,
+        urgent, today: todayCount, overdue, completion_rate
+      }
+    });
+  } catch (error) {
+    console.error('Get task stats error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch task statistics'
+    });
+  }
+});
+
 // Get task categories
 app.get('/api/tasks/categories', async (req, res) => {
   try {
@@ -1423,6 +1604,7 @@ app.get('/api/tasks/categories', async (req, res) => {
     });
   }
 });
+
 
 module.exports = app;
 

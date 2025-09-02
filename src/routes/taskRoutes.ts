@@ -17,6 +17,9 @@ router.get('/my-tasks', taskController.getMyTasks);
 // Get tasks for a specific group
 router.get('/group/:groupId', taskController.getGroupTasks);
 
+// Get task statistics (general endpoint with group_id query param)
+router.get('/stats', taskController.getTaskStats);
+
 // Get task statistics for a group
 router.get('/group/:groupId/stats', taskController.getTaskStats);
 
@@ -34,6 +37,9 @@ router.patch('/:taskId/assign', taskController.assignTask);
 
 // Complete a task (shortcut)
 router.patch('/:taskId/complete', taskController.completeTask);
+
+// Toggle task completion
+router.patch('/:taskId/toggle', taskController.toggleTaskCompletion);
 
 // Delete a task
 router.delete('/:taskId', taskController.deleteTask);

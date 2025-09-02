@@ -1,4 +1,4 @@
-import { supabase } from '../config/supabase';
+import { supabaseAdmin as supabase } from '../config/supabase';
 import type {
   CreateTaskData,
   UpdateTaskData,
@@ -15,7 +15,7 @@ export interface Task {
   category: string;
   priority: string;
   status: string;
-  assigned_to: string | null;
+  assignee_id: string | null;
   created_by: string;
   group_id: string;
   due_date: string | null;
@@ -46,6 +46,7 @@ export const createTask = async (taskData: CreateTaskData, createdBy: string): P
     .insert({
       ...taskData,
       created_by: createdBy,
+      assignee_id: taskData.assignee_id || createdBy, // Auto-assign to creator if no assignee specified
       status: 'pending',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -65,22 +66,10 @@ export const createTask = async (taskData: CreateTaskData, createdBy: string): P
 export const getTasksByGroup = async (
   groupId: string, 
   filters: TaskFiltersData = { limit: 50, offset: 0 }
-): Promise<TaskWithAssignee[]> => {
+): Promise<Task[]> => {
   let query = supabase
     .from('tasks')
-    .select(`
-      *,
-      assignee:assigned_to (
-        id,
-        name,
-        email
-      ),
-      creator:created_by (
-        id,
-        name,
-        email
-      )
-    `)
+    .select('*')
     .eq('group_id', groupId)
     .order('created_at', { ascending: false });
 
@@ -98,7 +87,7 @@ export const getTasksByGroup = async (
   }
   
   if (filters.assigned_to) {
-    query = query.eq('assigned_to', filters.assigned_to);
+    query = query.eq('assignee_id', filters.assigned_to);
   }
   
   if (filters.urgent !== undefined) {
@@ -131,23 +120,11 @@ export const getTasksByAssignee = async (
   userId: string,
   groupId?: string,
   filters: TaskFiltersData = { limit: 50, offset: 0 }
-): Promise<TaskWithAssignee[]> => {
+): Promise<Task[]> => {
   let query = supabase
     .from('tasks')
-    .select(`
-      *,
-      assignee:assigned_to (
-        id,
-        name,
-        email
-      ),
-      creator:created_by (
-        id,
-        name,
-        email
-      )
-    `)
-    .eq('assigned_to', userId)
+    .select('*')
+    .eq('assignee_id', userId)
     .order('created_at', { ascending: false });
 
   if (groupId) {
@@ -185,7 +162,7 @@ export const getTaskById = async (taskId: string): Promise<TaskWithAssignee | nu
     .from('tasks')
     .select(`
       *,
-      assignee:assigned_to (
+      assignee:assignee_id (
         id,
         name,
         email
@@ -252,7 +229,7 @@ export const assignTask = async (
   const { data, error } = await supabase
     .from('tasks')
     .update({
-      assigned_to: assignData.assigned_to,
+      assignee_id: assignData.assigned_to,
       updated_at: new Date().toISOString(),
     })
     .eq('id', taskId)
@@ -324,12 +301,12 @@ export const getTaskStats = async (groupId: string): Promise<{
   }
 
   const total = data?.length || 0;
-  const completed = data?.filter(task => task.status === 'completed').length || 0;
-  const pending = data?.filter(task => task.status === 'pending').length || 0;
-  const inProgress = data?.filter(task => task.status === 'in_progress').length || 0;
+  const completed = data?.filter((task: any) => task.status === 'completed').length || 0;
+  const pending = data?.filter((task: any) => task.status === 'pending').length || 0;
+  const inProgress = data?.filter((task: any) => task.status === 'in_progress').length || 0;
   
   const now = new Date();
-  const overdue = data?.filter(task => 
+  const overdue = data?.filter((task: any) => 
     task.status !== 'completed' && 
     task.due_date && 
     new Date(task.due_date) < now

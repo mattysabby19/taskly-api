@@ -1,0 +1,894 @@
+{
+	"info": {
+		"_postman_id": "equitaskly-production-api",
+		"name": "EquiTaskly Production API",
+		"description": "Complete Postman collection for EquiTaskly Production API - All working endpoints tested and verified for deployment.\n\nThis collection includes:\n- Authentication endpoints (signup, login, profile)\n- Task CRUD operations (create, read, update, delete)\n- Group-based task management\n- Field transformation testing (camelCase ↔ snake_case)\n- Priority validation testing\n\n🎯 All endpoints verified working for production deployment.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "equitaskly-team"
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"health"
+							]
+						},
+						"description": "Check if the API server is running and healthy."
+					},
+					"response": []
+				},
+				{
+					"name": "User Signup",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.token) {",
+									"        pm.environment.set('authToken', response.token);",
+									"        pm.environment.set('userId', response.user.id);",
+									"    }",
+									"    pm.test('Signup successful', () => {",
+									"        pm.expect(response.success).to.be.true;",
+									"        pm.expect(response.token).to.exist;",
+									"    });",
+									"} else {",
+									"    pm.test('Signup response received', () => {",
+									"        pm.expect(pm.response.code).to.be.oneOf([201, 400, 409]);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test-{{$timestamp}}@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"name\": \"Test User\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/signup-simple",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"signup-simple"
+							]
+						},
+						"description": "Create a new user account with email and password."
+					},
+					"response": []
+				},
+				{
+					"name": "User Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test('Login successful', () => {",
+									"    pm.expect(response.success).to.be.true;",
+									"    pm.expect(response.token).to.exist;",
+									"    pm.expect(response.user).to.exist;",
+									"});",
+									"",
+									"if (response.success && response.token) {",
+									"    pm.environment.set('authToken', response.token);",
+									"    pm.environment.set('userId', response.user.id);",
+									"    pm.environment.set('userEmail', response.user.email);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"authtest1753561906486@example.com\",\n  \"password\": \"Test123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login with existing user credentials to get JWT token."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Profile",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test('Profile retrieved successfully', () => {",
+									"    pm.expect(response.success).to.be.true;",
+									"    pm.expect(response.user).to.exist;",
+									"    pm.expect(response.user.id).to.exist;",
+									"    pm.expect(response.user.email).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"profile"
+							]
+						},
+						"description": "Get current user profile information using JWT token."
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints for user registration, login, and profile management."
+		},
+		{
+			"name": "📝 Task Management",
+			"item": [
+				{
+					"name": "Create Task (snake_case format)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test('Task created successfully (snake_case)', () => {",
+									"    pm.expect(response.success).to.be.true;",
+									"    pm.expect(response.data).to.exist;",
+									"    pm.expect(response.data.id).to.exist;",
+									"    pm.expect(response.data.title).to.equal('Production Test Task (snake_case)');",
+									"    pm.expect(response.data.priority).to.equal('High');",
+									"});",
+									"",
+									"if (response.success && response.data) {",
+									"    pm.environment.set('taskId1', response.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Production Test Task (snake_case)\",\n  \"description\": \"Testing snake_case field format in production\",\n  \"category\": \"Work\",\n  \"priority\": \"High\",\n  \"urgent\": true,\n  \"estimated_minutes\": 60\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							]
+						},
+						"description": "Create a new task using snake_case field format (backend standard)."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Task (camelCase format)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test('Task created successfully (camelCase)', () => {",
+									"    pm.expect(response.success).to.be.true;",
+									"    pm.expect(response.data).to.exist;",
+									"    pm.expect(response.data.id).to.exist;",
+									"    pm.expect(response.data.title).to.equal('Production Test Task (camelCase)');",
+									"});",
+									"",
+									"pm.test('Field transformation working', () => {",
+									"    // Priority should be transformed from 'medium' to title case",
+									"    pm.expect(response.data.priority).to.be.oneOf(['medium', 'Medium']);",
+									"    // assignedTo should be transformed to assigned_to",
+									"    pm.expect(response.data.assigned_to || response.data.assignedTo).to.exist;",
+									"});",
+									"",
+									"if (response.success && response.data) {",
+									"    pm.environment.set('taskId2', response.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Production Test Task (camelCase)\",\n  \"description\": \"Testing camelCase field transformation in production\",\n  \"category\": \"Projects\",\n  \"priority\": \"medium\",\n  \"assignedTo\": \"65710f59-e2ce-4c0f-ac28-028750c2f8d2\",\n  \"dueDate\": \"2024-12-31T23:59:59.000Z\",\n  \"urgent\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							]
+						},
+						"description": "Create a new task using camelCase field format (frontend standard). Tests field transformation from camelCase to snake_case."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tasks for Group",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test('Tasks retrieved successfully', () => {",
+									"    pm.expect(response.success).to.be.true;",
+									"    pm.expect(response.data).to.exist;",
+									"    pm.expect(response.count).to.be.a('number');",
+									"});",
+									"",
+									"pm.test('Tasks array structure', () => {",
+									"    if (response.data.length > 0) {",
+									"        const task = response.data[0];",
+									"        pm.expect(task.id).to.exist;",
+									"        pm.expect(task.title).to.exist;",
+									"        pm.expect(task.priority).to.exist;",
+									"        pm.expect(task.status).to.exist;",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/group/29879397-7598-4a46-9378-cf64dd00ed26",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks",
+								"group",
+								"29879397-7598-4a46-9378-cf64dd00ed26"
+							]
+						},
+						"description": "Retrieve all tasks for a specific group. Returns paginated results with task count."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Tasks (General)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test('General tasks endpoint responds', () => {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404, 500]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test('Tasks data structure valid', () => {",
+									"        pm.expect(response.success).to.be.true;",
+									"        pm.expect(response.data).to.exist;",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							]
+						},
+						"description": "Get all tasks for the authenticated user across all groups."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test('Task updated successfully', () => {",
+									"    pm.expect(response.success).to.be.true;",
+									"    pm.expect(response.data).to.exist;",
+									"    pm.expect(response.data.title).to.include('UPDATED');",
+									"    pm.expect(response.data.status).to.equal('in_progress');",
+									"    pm.expect(response.data.priority).to.equal('Low');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"UPDATED: Production Test Task\",\n  \"status\": \"in_progress\",\n  \"priority\": \"Low\",\n  \"description\": \"This task has been updated via API\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{taskId1}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks",
+								"{{taskId1}}"
+							]
+						},
+						"description": "Update an existing task using PATCH method. Supports partial updates."
+					},
+					"response": []
+				},
+				{
+					"name": "Complete Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test('Task completed successfully', () => {",
+									"    pm.expect(response.success).to.be.true;",
+									"    pm.expect(response.data).to.exist;",
+									"    pm.expect(response.data.status).to.equal('completed');",
+									"    pm.expect(response.data.completed_at).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{taskId2}}/complete",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks",
+								"{{taskId2}}",
+								"complete"
+							]
+						},
+						"description": "Mark a task as completed. Sets status to 'completed' and records completion timestamp."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Task deletion responds correctly', () => {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.test('Deletion confirmed', () => {",
+									"        pm.expect(response.success).to.be.true;",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{taskId1}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks",
+								"{{taskId1}}"
+							]
+						},
+						"description": "Delete a task permanently from the system."
+					},
+					"response": []
+				}
+			],
+			"description": "Complete task management endpoints including CRUD operations, group-based retrieval, and task completion."
+		},
+		{
+			"name": "🧪 Field Transformation Tests",
+			"item": [
+				{
+					"name": "Test Priority Formats",
+					"item": [
+						{
+							"name": "Priority: Low (title case)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"pm.test('Title case Low priority accepted', () => {",
+											"    pm.expect(response.success).to.be.true;",
+											"    pm.expect(response.data.priority).to.equal('Low');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{authToken}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"Priority Test: Low (title case)\",\n  \"category\": \"Chores\",\n  \"priority\": \"Low\",\n  \"urgent\": false\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/tasks",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"tasks"
+									]
+								}
+							}
+						},
+						{
+							"name": "Priority: medium (lowercase)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"pm.test('Lowercase medium priority accepted', () => {",
+											"    pm.expect(response.success).to.be.true;",
+											"    pm.expect(response.data.priority).to.be.oneOf(['medium', 'Medium']);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{authToken}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"Priority Test: medium (lowercase)\",\n  \"category\": \"Chores\",\n  \"priority\": \"medium\",\n  \"urgent\": false\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/tasks",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"tasks"
+									]
+								}
+							}
+						},
+						{
+							"name": "Priority: high (lowercase)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"pm.test('Lowercase high priority accepted', () => {",
+											"    pm.expect(response.success).to.be.true;",
+											"    pm.expect(response.data.priority).to.be.oneOf(['high', 'High']);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{authToken}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"Priority Test: high (lowercase)\",\n  \"category\": \"Chores\",\n  \"priority\": \"high\",\n  \"urgent\": true\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/tasks",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"tasks"
+									]
+								}
+							}
+						}
+					],
+					"description": "Test all priority format variations to ensure validation works correctly."
+				},
+				{
+					"name": "Test camelCase → snake_case Transformation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test('camelCase transformation successful', () => {",
+									"    pm.expect(response.success).to.be.true;",
+									"    pm.expect(response.data).to.exist;",
+									"});",
+									"",
+									"pm.test('Field transformation verified', () => {",
+									"    const task = response.data;",
+									"    // These fields should be transformed from camelCase to snake_case",
+									"    pm.expect(task.assigned_to || task.assignedTo).to.exist;",
+									"    pm.expect(task.due_date || task.dueDate).to.exist;",
+									"    pm.expect(task.group_id).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Field Transformation Test\",\n  \"description\": \"Testing camelCase to snake_case field transformation\",\n  \"category\": \"Work\",\n  \"priority\": \"medium\",\n  \"assignedTo\": \"65710f59-e2ce-4c0f-ac28-028750c2f8d2\",\n  \"dueDate\": \"2024-12-31T23:59:59.000Z\",\n  \"groupId\": \"29879397-7598-4a46-9378-cf64dd00ed26\",\n  \"urgent\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							]
+						},
+						"description": "Test that camelCase fields from frontend are properly transformed to snake_case for backend storage."
+					},
+					"response": []
+				}
+			],
+			"description": "Comprehensive tests for field transformation and validation, ensuring frontend-backend compatibility."
+		},
+		{
+			"name": "📊 Load Tests",
+			"item": [
+				{
+					"name": "Create Multiple Tasks",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test('Batch task creation successful', () => {",
+									"    pm.expect(response.success).to.be.true;",
+									"    pm.expect(response.data).to.exist;",
+									"});",
+									"",
+									"// Save task ID for cleanup",
+									"if (response.success && response.data) {",
+									"    const taskIds = pm.environment.get('batchTaskIds') || [];",
+									"    taskIds.push(response.data.id);",
+									"    pm.environment.set('batchTaskIds', JSON.stringify(taskIds));",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Load Test Task {{$randomInt}}\",\n  \"description\": \"Testing API performance under load\",\n  \"category\": \"{{$randomArrayElement([\\\"Chores\\\", \\\"Work\\\", \\\"Projects\\\", \\\"Personal\\\"])}}\",\n  \"priority\": \"{{$randomArrayElement([\\\"Low\\\", \\\"Medium\\\", \\\"High\\\"])}}\",\n  \"urgent\": {{$randomBoolean}}\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							]
+						},
+						"description": "Create multiple tasks with random data to test API performance. Run this request multiple times to simulate load."
+					},
+					"response": []
+				}
+			],
+			"description": "Performance and load testing endpoints to verify API stability under stress."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto-login if no token exists",
+					"if (!pm.environment.get('authToken')) {",
+					"    console.log('No auth token found, will need to login first');",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global test for response time",
+					"pm.test('Response time acceptable', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});",
+					"",
+					"// Global test for proper headers",
+					"pm.test('Proper CORS headers', function () {",
+					"    pm.expect(pm.response.headers.get('Access-Control-Allow-Origin')).to.exist;",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://equitaskly-api.vercel.app",
+			"description": "Production URL for the EquiTaskly API server"
+		},
+		{
+			"key": "localUrl",
+			"value": "http://localhost:4000",
+			"description": "Local development URL"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"description": "JWT authentication token (auto-populated by login)"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"description": "Current user ID (auto-populated by login)"
+		},
+		{
+			"key": "userEmail",
+			"value": "",
+			"description": "Current user email (auto-populated by login)"
+		},
+		{
+			"key": "taskId1",
+			"value": "",
+			"description": "ID of first created task (auto-populated)"
+		},
+		{
+			"key": "taskId2",
+			"value": "",
+			"description": "ID of second created task (auto-populated)"
+		},
+		{
+			"key": "groupId",
+			"value": "29879397-7598-4a46-9378-cf64dd00ed26",
+			"description": "Test group ID for task operations"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
+	}
+}

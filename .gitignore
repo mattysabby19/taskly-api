@@ -174,3 +174,4 @@ docs/api/generated/
 sessions/
 *.session
 
+.vercel
